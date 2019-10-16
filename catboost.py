@@ -50,15 +50,25 @@ model = CatBoostRegressor(cat_features= [4, 5, 6, 7, 8, 9], eval_metric='RMSE', 
 #fit model to data
 model.fit(pool_train, eval_set=pool_test, use_best_model=True)
 
-
+# grid search for best parameters
 # params = {'depth': [6, 8, 10],
 #		  'learning_rate': [0.01,0.05,0.1],       
 #         'l2_leaf_reg': [2, 4, 6, 8, 10],
 #         'bagging_temperature' : [0, 1, 6, 12],
 #         'random_strength' : [0, 3, 6, 9]}
 # 
-# grid_search = model.grid_search(params, X=train_pool, verbose=2) 
+# grid_search = model.grid_search(params, X=pool_train, verbose=2) 
 # print(grid_search)
+
+# bayesian optimization
+# pds = {'depth': (6, 8),
+#        'bagging_temperature': (3,10)
+# 		 'learning_rate': (0.01, 1)
+#       }
+# optimizer = BayesianOptimization(cat_hyp, pds)
+# optimizer.maximize(init_points=3, n_iter=50)
+# params = optimizer.max['params']
+# params['depth'] = int(params['depth'])
 
 print("Passed Model Creation")
 
@@ -82,3 +92,17 @@ output = pd.read_csv(output_file, header=0, index_col=False)
 output["Income"] = output_scores
 output.to_csv(output_file, index=False)
 
+
+# bayesian optimizer function
+# def cat_hyp(depth, bagging_temperature, learning_rate): 
+#   params = {"iterations": 1000,
+#             "learning_rate": learning_rate,
+#             "eval_metric": "R2",
+#             "verbose": False} # Default Parameters
+#   params[ "depth"] = int(round(depth)) 
+#   params["bagging_temperature"] = bagging_temperature
+#    
+#   scores = cgb.cv(pool_train,
+#               params,
+#               fold_count=5)
+#   return np.min(scores['test-RMSE-mean'])*-1              
