@@ -7,27 +7,34 @@ from sklearn.compose import ColumnTransformer
 from sklearn.model_selection import cross_val_score, GridSearchCV, RandomizedSearchCV, train_test_split
 from catboost import CatBoostRegressor, Pool
 
+#read in training data from csv
 training = pd.read_csv('tcd ml 2019-20 income prediction training (with labels).csv')
 
+#get "Income" column on its own, separate from rest of table
 X = training.drop('Instance', axis=1)
 X = X.drop('Income in EUR', axis=1)
 y = training['Income in EUR']
 
+#read in test data from csv, drop instance and income columns for formatting
 pred_x = pd.read_csv('tcd ml 2019-20 income prediction test (without labels).csv')
 pred_x = pred_x.drop('Income', axis=1)
 pred_x = pred_x.drop('Instance', axis=1)
 
 print(pred_x)
 
+#split data into train and test sets
 X_train, X_test, y_train, y_test = train_test_split(X, y, shuffle=True, test_size=0.1)
 
+#create imputer for missing values with different strategies for numerical vs categorical data, numerical takes the mean, categorical the mode
 ct = ColumnTransformer(transformers=[('num_imp', SimpleImputer(strategy='median'), [0, 2, 4, 9]), ('cat_imp', SimpleImputer(strategy='most_frequent'), [1, 3, 5, 6, 7, 8])], remainder='passthrough')
 
+#apply imputer to data
 ct.fit(X_train, y_train)
 X_train = ct.transform(X_train)
 X_test = ct.transform(X_test)
 pred_x = ct.transform(pred_x)
 
+#create catboost pool data structures specifying categorical features for both train and test data
 pool_train = Pool(X_train, label=y_train, cat_features = [4, 5, 6, 7, 8, 9])
 
 pool_test = Pool(X_test, label=y_test, cat_features = [4, 5, 6, 7, 8, 9])
@@ -35,17 +42,20 @@ pool_test = Pool(X_test, label=y_test, cat_features = [4, 5, 6, 7, 8, 9])
 # pred_pool = Pool(X_pred, label=y_pred, cat_features = [4, 5, 6, 7, 8, 9, 10])
 
 print("Starting model creation")
+#create catboostmodel
 model = CatBoostRegressor(cat_features= [4, 5, 6, 7, 8, 9], eval_metric='RMSE', od_type='Iter', od_wait=10,
                           one_hot_max_size=40, task_type="GPU", devices='0', use_best_model=True,iterations=10000,
                           learning_rate=0.01, depth=10, l2_leaf_reg=3, random_strength=4, bagging_temperature=10,
                           border_count=255)
+#fit model to data
 model.fit(pool_train, eval_set=pool_test, use_best_model=True)
 
 print("Passed Model Creation")
 
-
+#predict test data
 predicted_scores = model.predict(X_test)
 
+#compare to real data for rmse
 print("Root Mean squared error: %.2f"
       % sqrt(mean_squared_error(y_test, predicted_scores)))
 
@@ -53,8 +63,10 @@ print(predicted_scores)
 print(X_test)
 print(pred_x)
 
+#predict actual output data
 output_scores = model.predict(pred_x)
 
+#read csv file, replace income column with predicted data, write back to same file
 output_file = "tcd ml 2019-20 income prediction submission file.csv"
 output = pd.read_csv(output_file, header=0, index_col=False)
 output["Income"] = output_scores
