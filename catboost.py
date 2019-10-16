@@ -50,6 +50,16 @@ model = CatBoostRegressor(cat_features= [4, 5, 6, 7, 8, 9], eval_metric='RMSE', 
 #fit model to data
 model.fit(pool_train, eval_set=pool_test, use_best_model=True)
 
+
+# params = {'depth': [6, 8, 10],
+#		  'learning_rate': [0.01,0.05,0.1],       
+#         'l2_leaf_reg': [2, 4, 6, 8, 10],
+#         'bagging_temperature' : [0, 1, 6, 12],
+#         'random_strength' : [0, 3, 6, 9]}
+# 
+# grid_search = model.grid_search(params, X=train_pool, verbose=2) 
+# print(grid_search)
+
 print("Passed Model Creation")
 
 #predict test data
